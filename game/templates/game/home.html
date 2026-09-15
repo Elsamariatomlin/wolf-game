@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Wolf Runner</title>
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box
+}
+html,body{
+width:100%;
+height:100%;
+overflow:hidden
+}
+body{
+background:#10151d;
+display:flex;
+justify-content:center;
+align-items:center;
+font-family:"Courier New",monospace
+}
+#game{
+position:relative;
+width:min(100vw,56.25vh);
+height:min(177.777vh,100vh);
+max-width:540px;
+max-height:960px;
+overflow:hidden;
+background:#55c8ed;
+border:5px solid #151515;
+box-shadow:0 0 0 4px #3c3c3c,0 20px 60px #000;
+image-rendering:pixelated
+}
+canvas{
+position:absolute;
+left:0;
+top:0;
+width:100%;
+height:100%;
+display:block;
+image-rendering:pixelated;
+image-rendering:crisp-edges
+}
+#hud{
+position:absolute;
+left:0;
+right:0;
+top:0;
+height:70px;
+z-index:20;
+display:flex;
+justify-content:space-between;
+padding:8px;
+pointer-events:none
+}
+.hudbox{
+background:#132033;
+border:3px solid #f4d271;
+padding:5px 8px;
+min-width:70px;
+text-align:center;
+box-shadow:3px 3px 0 #432d29
+}
+.label{
+display:block;
+font-size:7px;
+color:#9eb4c8;
+letter-spacing:1px
+}
+.value{
+display:block;
+font-size:11px;
+font-weight:bold;
+color:#fff0a4
+}
+#distance{
+position:absolute;
+left:50%;
+transform:translateX(-50%);
+top:8px
+}
+.screen{
+position:absolute;
+inset:0;
+z-index:50;
+background:rgba(7,13,21,.78);
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+text-align:center
+}
+.hidden{
+display:none!important
+}
+.logo{
+font-size:55px;
+font-weight:900;
+letter-spacing:4px;
+color:#f5d46d;
+text-shadow:5px 5px 0 #67382d,8px 8px 0 #111
+}
+.logo2{
+font-size:29px;
+font-weight:bold;
+letter-spacing:8px;
+color:#f3ead5;
+text-shadow:4px 4px 0 #54382d;
+margin-top:7px
+}
+.subtitle{
+font-size:9px;
+letter-spacing:3px;
+color:#83dce9;
+margin:22px 0
+}
+button{
+font-family:"Courier New",monospace;
+cursor:pointer
+}
+.mainbutton{
+background:#d94d43;
+border:4px solid #762d29;
+color:#fff;
+font-size:17px;
+font-weight:bold;
+padding:12px 32px;
+box-shadow:5px 5px 0 #111
+}
+.mainbutton:active{
+transform:translate(5px,5px);
+box-shadow:none
+}
+.controls{
+margin-top:25px;
+padding:10px 15px;
+background:#121c2a;
+border:3px solid #405268;
+color:#c9dbea;
+font-size:9px;
+line-height:2
+}
+.pauseTitle{
+font-size:38px;
+color:#f6d56d;
+text-shadow:4px 4px 0 #64382d;
+margin-bottom:25px
+}
+.gameoverTitle{
+font-size:31px;
+color:#ef6855;
+text-shadow:4px 4px 0 #55272a;
+margin-bottom:18px
+}
+.finalLabel{
+font-size:8px;
+color:#9bb0c1;
+margin-top:7px
+}
+.finalValue{
+font-size:23px;
+font-weight:bold;
+color:#ffe48b
+}
+#mobile{
+position:absolute;
+left:0;
+right:0;
+bottom:12px;
+z-index:30;
+display:none;
+justify-content:space-evenly
+}
+.mobileButton{
+width:48px;
+height:42px;
+background:#172638;
+border:3px solid #e8ce73;
+color:#ffe994;
+font-size:18px;
+opacity:.85
+}
+.mobileButton:active{
+background:#52677c
+}
+@media(max-width:600px){
+#mobile{
+display:flex
+}
+}
+</style>
+</head>
+<body>
+
+<div id="game">
+
+<canvas id="canvas" width="360" height="640"></canvas>
+
+<div id="hud">
+<div class="hudbox">
+<span class="label">SCORE</span>
+<span class="value" id="score">000000</span>
+</div>
+
+<div class="hudbox" id="distance">
+<span class="label">DISTANCE</span>
+<span class="value" id="distanceValue">000M</span>
+</div>
+
+<div class="hudbox">
+<span class="label">GOATS</span>
+<span class="value" id="goats">0</span>
+</div>
+</div>
+
+<div id="start" class="screen">
+<div class="logo">WOLF</div>
+<div class="logo2">RUNNER</div>
+<div class="subtitle">PIXEL BEACH ADVENTURE</div>
+<button class="mainbutton" id="startButton">START GAME</button>
+<div class="controls">
+← → MOVE<br>
+SPACE / ↑ JUMP<br>
+↓ SLIDE<br>
+P PAUSE
+</div>
+</div>
+
+<div id="pause" class="screen hidden">
+<div class="pauseTitle">PAUSED</div>
+<button class="mainbutton" id="resumeButton">RESUME</button>
+<br>
+<button class="mainbutton" id="restartButton">RESTART</button>
+</div>
+
+<div id="gameover" class="screen hidden">
+<div class="gameoverTitle">GAME OVER</div>
+
+<div class="finalLabel">SCORE</div>
+<div class="finalValue" id="finalScore">000000</div>
+
+<div class="finalLabel">DISTANCE</div>
+<div class="finalValue" id="finalDistance">000M</div>
+
+<div class="finalLabel">GOATS</div>
+<div class="finalValue" id="finalGoats">0</div>
+
+<br>
+
+<button class="mainbutton" id="againButton">PLAY AGAIN</button>
+</div>
+
+<div id="mobile">
+<button class="mobileButton" id="left">◀</button>
+<button class="mobileButton" id="jump">▲</button>
+<button class="mobileButton" id="slide">▼</button>
+<button class="mobileButton" id="right">▶</button>
+</div>
+
+</div>
+
+<script>
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+ctx.imageSmoothingEnabled=false;
+
+const W=360;
+const H=640;
+
+let gameState="menu";
+let last=0;
+let time=0;
+let score=0;
+let distance=0;
+let goatsCollected=0;
+let best=Number(localStorage.getItem("wolfBest")||0);
+let speed=2.5;
+let shake=0;
+let flash=0;
+let enemyTimer=1000;
+let goatTimer=800;
+let decorationTimer=0;
+
+const player={
+lane:1,
+targetLane:1,
+x:180,
+y:505,
+jump:0,
+velocity:0,
+jumping:false,
+sliding:false,
+slideTime:0,
+frame:0,
+frameTime:0,
+invincible:0,
+shield:false
+};
+
+const enemies=[];
+const goats=[];
+const particles=[];
+const decorations=[];
+const clouds=[];
+const waves=[];
+
+const laneX=[105,180,255];
+
+const colors={
+sky:"#58c9ee",
+sky2:"#9be2f2",
+ocean:"#2b9fba",
+ocean2:"#58c7d2",
+sand:"#e7c876",
+sand2:"#c39b51",
+road:"#b78c50",
+road2:"#8c683f",
+road3:"#d2aa61",
+green:"#398457",
+green2:"#286643",
+trunk:"#7d5034",
+trunk2:"#583b2c",
+dark:"#171717",
+gold:"#f4d271",
+white:"#fff1bc",
+red:"#d94d43",
+blue:"#4bbbd3"
+};
+
+function pad(n,l){
+return String(Math.floor(n)).padStart(l,"0");
+}
+
+function startGame(){
+gameState="playing";
+score=0;
+distance=0;
+goatsCollected=0;
+speed=2.5;
+shake=0;
+flash=0;
+enemyTimer=700;
+goatTimer=500;
+decorationTimer=0;
+
+player.lane=1;
+player.targetLane=1;
+player.x=180;
+player.y=505;
+player.jump=0;
+player.velocity=0;
+player.jumping=false;
+player.sliding=false;
+player.slideTime=0;
+player.frame=0;
+player.frameTime=0;
+player.invincible=0;
+player.shield=false;
+
+enemies.length=0;
+goats.length=0;
+particles.length=0;
+decorations.length=0;
+
+document.getElementById("start").classList.add("hidden");
+document.getElementById("pause").classList.add("hidden");
+document.getElementById("gameover").classList.add("hidden");
+
+for(let i=0;i<8;i++){
+decorations.push({
+z:i*.14,
+side:i%2===0?-1:1,
+type:i%3===0?"tree":"rock",
+offset:Math.random()*30
+});
+}
+
+last=performance.now();
+requestAnimationFrame(loop);
+}
+
+function loop(now){
+if(gameState!=="playing")return;
+
+let delta=Math.min(now-last,40);
+
+last=now;
+time+=delta;
+
+update(delta);
+render();
+
+requestAnimationFrame(loop);
+}
+
+function update(delta){
+
+speed+=delta*.0003;
+
+if(speed>8){
+speed=8;
+}
+
+distance+=delta*.004*speed;
+
+score+=delta*.01*speed;
+
+if(player.invincible>0){
+player.invincible-=delta;
+}
+
+if(shake>0){
+shake-=delta*.04;
+}
+
+if(flash>0){
+flash-=delta;
+}
+
+updatePlayer(delta);
+updateEnemies(delta);
+updateGoats(delta);
+updateParticles(delta);
+updateDecorations(delta);
+updateClouds(delta);
+updateWaves(delta);
+
+enemyTimer-=delta;
+goatTimer-=delta;
+decorationTimer-=delta;
+
+if(enemyTimer<=0){
+spawnEnemy();
+enemyTimer=Math.max(430,1000-distance*.15)+Math.random()*300;
+}
+
+if(goatTimer<=0){
+spawnGoat();
+goatTimer=Math.max(350,800-distance*.08)+Math.random()*300;
+}
+
+if(decorationTimer<=0){
+spawnDecoration();
+decorationTimer=250+Math.random()*250;
+}
+
+document.getElementById("score").textContent=pad(score,6);
+document.getElementById("distanceValue").textContent=pad(distance,3)+"M";
+document.getElementById("goats").textContent=goatsCollected;
+}
+
+function updatePlayer(delta){
+
+player.frameTime+=delta;
+
+if(player.frameTime>100){
+player.frameTime=0;
+player.frame=(player.frame+1)%6;
+}
+
+let difference=player.targetLane-player.lane;
+
+player.lane+=difference*Math.min(.35,delta*.012);
+
+player.x=laneX[Math.round(player.lane)];
+
+if(player.jumping){
+
+player.velocity+=.055*delta/16;
+player.jump+=player.velocity*delta/4;
+
+if(player.jump>=0){
+
+player.jump=0;
+player.velocity=0;
+player.jumping=false;
+
+createDust(player.x,player.y+32,7);
+}
+}
+
+if(player.sliding){
+
+player.slideTime-=delta;
+
+if(player.slideTime<=0){
+player.sliding=false;
+}
+}
+
+player.y=505+player.jump;
+}
+
+function moveLeft(){
+if(gameState!=="playing")return;
+
+player.targetLane--;
+
+if(player.targetLane<0){
+player.targetLane=0;
+}
+}
+
+function moveRight(){
+if(gameState!=="playing")return;
+
+player.targetLane++;
+
+if(player.targetLane>2){
+player.targetLane=2;
+}
+}
+
+function jump(){
+if(gameState!=="playing")return;
+
+if(player.jumping)return;
+
+if(player.sliding)return;
+
+player.jumping=true;
+player.velocity=-.95;
+
+createDust(player.x,player.y+30,8);
+}
+
+function slide(){
+if(gameState!=="playing")return;
+
+if(player.jumping)return;
+
+player.sliding=true;
+player.slideTime=600;
+
+createDust(player.x,player.y+30,8);
+}
+
+function pauseGame(){
+if(gameState!=="playing")return;
+
+gameState="paused";
+document.getElementById("pause").classList.remove("hidden");
+}
+
+function resumeGame(){
+if(gameState!=="paused")return;
+
+gameState="playing";
+document.getElementById("pause").classList.add("hidden");
+
+last=performance.now();
+
+requestAnimationFrame(loop);
+}
+
+function gameOver(){
+
+if(gameState!=="playing")return;
+
+gameState="gameover";
+
+let final=Math.floor(score);
+
+if(final>best){
+best=final;
+localStorage.setItem("wolfBest",String(best));
+}
+
+document.getElementById("finalScore").textContent=pad(final,6);
+document.getElementById("finalDistance").textContent=pad(distance,3)+"M";
+document.getElementById("finalGoats").textContent=goatsCollected;
+
+document.getElementById("gameover").classList.remove("hidden");
+
+for(let i=0;i<35;i++){
+particle(
+player.x,
+player.y,
+"#f5d36b",
+Math.random()*Math.PI*2,
+2+Math.random()*5
+);
+}
+}
+
+function spawnEnemy(){
+
+let lane=Math.floor(Math.random()*3);
+
+let type=Math.floor(Math.random()*3);
+
+enemies.push({
+lane:lane,
+z:0,
+type:type,
+frame:0,
+frameTime:0,
+passed:false,
+speed:.8+Math.random()*.3
+});
+}
+
+function spawnGoat(){
+
+let lane=Math.floor(Math.random()*3);
+
+goats.push({
+lane:lane,
+z:0,
+bob:Math.random()*10,
+rotation:0
+});
+}
+
+function updateEnemies(delta){
+
+for(let i=enemies.length-1;i>=0;i--){
+
+let e=enemies[i];
+
+e.z+=speed*e.speed*delta*.001;
+
+e.frameTime+=delta;
+
+if(e.frameTime>120){
+e.frameTime=0;
+e.frame=(e.frame+1)%4;
+}
+
+if(e.z>1.15){
+
+if(!e.passed){
+score+=50;
+}
+
+enemies.splice(i,1);
+
+continue;
+}
+
+let p=project(e.z);
+
+let x=laneX[e.lane];
+
+if(
+e.z>.78 &&
+e.z<1.05 &&
+Math.abs(x-player.x)<36
+){
+
+if(player.jumping&&player.jump<-18){
+
+e.passed=true;
+score+=100;
+
+for(let j=0;j<10;j++){
+particle(x,p.y,"#f5d36b",Math.random()*6.28,2+Math.random()*3);
+}
+
+continue;
+}
+
+if(player.sliding){
+continue;
+}
+
+if(player.invincible<=0){
+
+if(player.shield){
+
+player.shield=false;
+player.invincible=1000;
+shake=12;
+
+for(let j=0;j<20;j++){
+particle(x,p.y,"#6ce2ff",Math.random()*6.28,2+Math.random()*4);
+}
+
+}else{
+
+gameOver();
+return;
+}
+}
+}
+}
+}
+
+function updateGoats(delta){
+
+for(let i=goats.length-1;i>=0;i--){
+
+let g=goats[i];
+
+g.z+=speed*delta*.0008;
+g.bob+=delta*.006;
+
+if(g.z>1.15){
+
+goats.splice(i,1);
+
+continue;
+}
+
+let p=project(g.z);
+
+let x=laneX[g.lane];
+
+if(
+g.z>.76 &&
+g.z<1.08 &&
+Math.abs(x-player.x)<42
+){
+
+if(
+player.jumping||
+Math.abs(player.jump)<15
+){
+
+goatsCollected++;
+score+=100;
+
+for(let j=0;j<20;j++){
+particle(
+x,
+p.y,
+j%2?"#f6c94d":"#fff0a0",
+Math.random()*6.28,
+2+Math.random()*4
+);
+}
+
+flash=60;
+
+goats.splice(i,1);
+}
+}
+}
+}
+
+function project(z){
+
+let d=Math.max(0,Math.min(1,z));
+
+let y=235+Math.pow(d,1.55)*405;
+
+let width=30+Math.pow(d,1.4)*300;
+
+let scale=.18+d*1;
+
+return{
+x:180,
+y:y,
+width:width,
+scale:scale
+};
+}
+
+function createDust(x,y,count){
+
+for(let i=0;i<count;i++){
+
+particle(
+x+Math.random()*20-10,
+y+Math.random()*8,
+"#caa65b",
+Math.PI+Math.random()*Math.PI,
+1+Math.random()*2
+);
+}
+}
+
+function particle(x,y,color,angle,speedValue){
+
+particles.push({
+x:x,
+y:y,
+vx:Math.cos(angle)*speedValue,
+vy:Math.sin(angle)*speedValue,
+life:350+Math.random()*650,
+size:2+Math.random()*4,
+color:color,
+gravity:.04
+});
+}
+
+function updateParticles(delta){
+
+for(let i=particles.length-1;i>=0;i--){
+
+let p=particles[i];
+
+p.life-=delta;
+
+if(p.life<=0){
+
+particles.splice(i,1);
+
+continue;
+}
+
+p.x+=p.vx*delta*.06;
+p.y+=p.vy*delta*.06;
+p.vy+=p.gravity*delta*.02;
+}
+}
+
+function spawnDecoration(){
+
+decorations.push({
+z:0,
+side:Math.random()<.5?-1:1,
+type:Math.random()<.6?"tree":"rock",
+offset:Math.random()*40
+});
+}
+
+function updateDecorations(delta){
+
+for(let i=decorations.length-1;i>=0;i--){
+
+let d=decorations[i];
+
+d.z+=speed*delta*.00055;
+
+if(d.z>1.2){
+decorations.splice(i,1);
+}
+}
+}
+
+function createCloud(){
+
+clouds.push({
+x:370,
+y:30+Math.random()*130,
+speed:.005+Math.random()*.008,
+size:.6+Math.random()*.8
+});
+}
+
+for(let i=0;i<5;i++){
+createCloud();
+}
+
+function updateClouds(delta){
+
+for(let i=clouds.length-1;i>=0;i--){
+
+let c=clouds[i];
+
+c.x-=c.speed*delta;
+
+if(c.x<-100){
+clouds.splice(i,1);
+createCloud();
+}
+}
+}
+
+function updateWaves(delta){
+
+for(let i=0;i<waves.length;i++){
+waves[i].x-=delta*.03;
+
+if(waves[i].x<-40){
+waves[i].x=360;
+}
+}
+}
+
+for(let i=0;i<12;i++){
+waves.push({
+x:Math.random()*360,
+y:260+Math.random()*110
+});
+}
+
+function render(){
+
+ctx.save();
+
+let sx=0;
+let sy=0;
+
+if(shake>0){
+
+sx=(Math.random()-.5)*shake;
+sy=(Math.random()-.5)*shake;
+}
+
+ctx.translate(sx,sy);
+
+drawSky();
+drawClouds();
+drawOcean();
+drawIsland();
+drawBeach();
+drawDecorations();
+drawRoad();
+drawRoadLines();
+drawGoats();
+drawEnemies();
+drawPlayer();
+drawParticles();
+
+ctx.restore();
+
+if(flash>0){
+
+ctx.fillStyle="rgba(255,255,255,.16)";
+ctx.fillRect(0,0,W,H);
+}
+}
+
+function drawSky(){
+
+ctx.fillStyle=colors.sky;
+ctx.fillRect(0,0,W,250);
+
+for(let y=0;y<235;y+=8){
+
+let alpha=1-y/280;
+
+ctx.fillStyle=`rgba(255,255,255,${alpha*.035})`;
+
+ctx.fillRect(0,y,W,8);
+}
+
+ctx.fillStyle="#ffe477";
+
+for(let y=55;y<105;y+=10){
+
+let w=70-Math.abs(80-y)*.9;
+
+ctx.fillRect(280-w/2,y,w,10);
+}
+}
+
+function drawClouds(){
+
+for(let c of clouds){
+
+ctx.fillStyle="#fff";
+
+let s=c.size;
+
+ctx.fillRect(c.x,c.y,45*s,12*s);
+ctx.fillRect(c.x+10*s,c.y-10*s,24*s,12*s);
+ctx.fillRect(c.x+26*s,c.y-16*s,20*s,18*s);
+ctx.fillRect(c.x+40*s,c.y-7*s,24*s,12*s);
+}
+}
+
+function drawOcean(){
+
+ctx.fillStyle=colors.ocean;
+ctx.fillRect(0,220,W,205);
+
+for(let i=0;i<waves.length;i++){
+
+let w=waves[i];
+
+ctx.fillStyle="rgba(210,247,245,.3)";
+
+ctx.fillRect(w.x,w.y,28,3);
+ctx.fillRect(w.x+8,w.y+4,36,3);
+ctx.fillRect(w.x+30,w.y-3,17,3);
+}
+}
+
+function drawIsland(){
+
+ctx.fillStyle="#438f69";
+
+ctx.beginPath();
+
+ctx.moveTo(0,260);
+ctx.lineTo(40,245);
+ctx.lineTo(75,250);
+ctx.lineTo(110,220);
+ctx.lineTo(145,248);
+ctx.lineTo(180,230);
+ctx.lineTo(220,252);
+ctx.lineTo(260,218);
+ctx.lineTo(300,245);
+ctx.lineTo(360,225);
+ctx.lineTo(360,280);
+ctx.lineTo(0,280);
+ctx.fill();
+}
+
+function drawBeach(){
+
+ctx.fillStyle=colors.sand;
+
+ctx.fillRect(0,425,W,215);
+
+ctx.fillStyle=colors.sand2;
+
+ctx.fillRect(0,425,W,8);
+
+for(let i=0;i<80;i++){
+
+let x=(i*71)%360;
+let y=440+(i*43)%195;
+
+ctx.fillStyle=i%3===0?"#c9a356":"#d7b967";
+
+ctx.fillRect(x,y,3,3);
+}
+}
+
+function drawDecorations(){
+
+for(let d of decorations){
+
+let p=project(d.z);
+
+let scale=p.scale;
+
+let x=180+d.side*(p.width/2+35+d.offset);
+
+let y=p.y;
+
+if(d.type==="tree"){
+drawPalm(x,y,scale);
+}else{
+drawRock(x,y,scale);
+}
+}
+}
+
+function drawPalm(x,y,s){
+
+let h=110*s;
+
+if(h<8)return;
+
+ctx.save();
+
+ctx.translate(x,y);
+
+ctx.scale(s,s);
+
+ctx.fillStyle=colors.trunk;
+
+ctx.fillRect(-5,-h,10,h);
+
+ctx.fillStyle=colors.trunk2;
+
+ctx.fillRect(4,-h,5,h);
+
+ctx.fillStyle=colors.green;
+
+ctx.fillRect(-55,-h-8,55,9);
+ctx.fillRect(0,-h-15,55,9);
+ctx.fillRect(-42,-h-25,45,9);
+ctx.fillRect(10,-h-30,48,9);
+ctx.fillRect(-8,-h-35,14,12);
+
+ctx.restore();
+}
+
+function drawRock(x,y,s){
+
+if(s<.2)return;
+
+ctx.save();
+
+ctx.translate(x,y);
+
+ctx.scale(s,s);
+
+ctx.fillStyle="#806c52";
+
+ctx.fillRect(-18,-15,36,15);
+ctx.fillRect(-13,-21,25,8);
+
+ctx.fillStyle="#a58d6d";
+
+ctx.fillRect(-8,-19,10,5);
+
+ctx.restore();
+}
+
+function drawRoad(){
+
+ctx.fillStyle=colors.road;
+
+ctx.beginPath();
+
+ctx.moveTo(165,235);
+ctx.lineTo(195,235);
+ctx.lineTo(335,640);
+ctx.lineTo(25,640);
+ctx.closePath();
+
+ctx.fill();
+
+ctx.fillStyle=colors.road2;
+
+ctx.beginPath();
+
+ctx.moveTo(165,235);
+ctx.lineTo(170,235);
+ctx.lineTo(50,640);
+ctx.lineTo(25,640);
+ctx.closePath();
+
+ctx.fill();
+
+ctx.beginPath();
+
+ctx.moveTo(190,235);
+ctx.lineTo(195,235);
+ctx.lineTo(335,640);
+ctx.lineTo(310,640);
+ctx.closePath();
+
+ctx.fill();
+}
+
+function drawRoadLines(){
+
+let offset=(time*speed*.05)%70;
+
+for(let i=0;i<8;i++){
+
+let z=(i*.13+offset/700)%1;
+
+let p=project(z);
+
+let width=p.width;
+
+ctx.fillStyle="#e6c875";
+
+let lineHeight=3+p.scale*5;
+
+ctx.fillRect(
+180-3,
+p.y,
+6,
+lineHeight
+);
+
+ctx.fillRect(
+180-width*.18,
+p.y,
+3,
+lineHeight
+);
+
+ctx.fillRect(
+180+width*.18,
+p.y,
+3,
+lineHeight
+);
+}
+}
+
+function drawGoats(){
+
+for(let g of goats){
+
+let p=project(g.z);
+
+let x=laneX[g.lane];
+
+let s=p.scale;
+
+drawGoat(x,p.y-12*s,s);
+}
+}
+
+function drawGoat(x,y,s){
+
+if(s<.2)return;
+
+ctx.save();
+
+ctx.translate(x,y);
+
+ctx.scale(s,s);
+
+ctx.fillStyle="#f0e9d0";
+
+ctx.fillRect(-18,-30,36,25);
+ctx.fillRect(-25,-25,12,17);
+
+ctx.fillStyle="#c9bda4";
+
+ctx.fillRect(-28,-21,9,9);
+
+ctx.fillStyle="#382d29";
+
+ctx.fillRect(-25,-19,3,3);
+
+ctx.fillStyle="#e6dcc2";
+
+ctx.fillRect(12,-32,10,15);
+
+ctx.fillStyle="#44382e";
+
+ctx.fillRect(15,-40,5,10);
+ctx.fillRect(22,-39,5,9);
+
+ctx.fillStyle="#41352d";
+
+ctx.fillRect(-12,-8,5,14);
+ctx.fillRect(8,-8,5,14);
+
+ctx.fillStyle="#b2a48a";
+
+ctx.fillRect(-18,-5,8,4);
+
+ctx.restore();
+}
+
+function drawEnemies(){
+
+for(let e of enemies){
+
+let p=project(e.z);
+
+let x=laneX[e.lane];
+
+let s=p.scale;
+
+drawHuman(x,p.y-20*s,s,e.type,e.frame);
+}
+}
+
+function drawHuman(x,y,s,type,frame){
+
+if(s<.2)return;
+
+ctx.save();
+
+ctx.translate(x,y);
+
+ctx.scale(s,s);
+
+let shirt=type===0?"#d64d43":type===1?"#416ca8":"#784a3b";
+
+let pants=type===0?"#29384e":type===1?"#334332":"#272532";
+
+let leg=frame%2;
+
+ctx.fillStyle="#3d2924";
+
+ctx.fillRect(-9,-50,18,17);
+
+ctx.fillStyle="#c98258";
+
+ctx.fillRect(-12,-44,24,22);
+
+ctx.fillStyle=shirt;
+
+ctx.fillRect(-14,-29,28,27);
+
+ctx.fillStyle=pants;
+
+ctx.fillRect(-13,-2,10,23);
+ctx.fillRect(3,-2,10,23);
+
+ctx.fillStyle="#242020";
+
+if(leg===0){
+ctx.fillRect(-17,19,14,5);
+ctx.fillRect(4,19,14,5);
+}else{
+ctx.fillRect(-14,19,14,5);
+ctx.fillRect(2,19,14,5);
+}
+
+ctx.fillStyle="#c98258";
+
+if(frame%2===0){
+ctx.fillRect(-20,-24,7,19);
+ctx.fillRect(13,-19,7,19);
+}else{
+ctx.fillRect(-18,-18,7,18);
+ctx.fillRect(12,-25,7,18);
+}
+
+ctx.fillStyle="#20252d";
+
+if(type===0){
+ctx.fillRect(-14,-51,28,6);
+ctx.fillRect(-9,-56,18,6);
+}
+
+if(type===1){
+ctx.fillRect(-13,-54,26,7);
+ctx.fillRect(-17,-50,8,6);
+}
+
+if(type===2){
+ctx.fillRect(-14,-52,28,5);
+ctx.fillRect(-10,-57,20,6);
+}
+
+ctx.restore();
+}
+
+function drawPlayer(){
+
+let x=player.x;
+let y=player.y+player.jump;
+
+if(player.sliding){
+drawWolfSlide(x,y);
+}else{
+drawWolf(x,y);
+}
+
+if(player.shield){
+drawShield(x,y);
+}
+}
+
+function drawWolf(x,y){
+
+ctx.save();
+
+ctx.translate(x,y);
+
+let bounce=
+player.jumping?
+0:
+Math.sin(time*.018)*2;
+
+ctx.translate(0,bounce);
+
+let flip=1;
+
+ctx.scale(flip,1);
+
+let dark="#292d38";
+let dark2="#1b1e27";
+let gray="#555b68";
+let light="#858b94";
+let eye="#f7d75d";
+
+ctx.fillStyle="rgba(0,0,0,.28)";
+ctx.fillRect(-29,34,58,7);
+
+ctx.fillStyle=dark2;
+
+ctx.fillRect(-22,-34,42,42);
+
+ctx.fillRect(-30,-20,15,27);
+
+ctx.fillStyle=dark;
+
+ctx.fillRect(-35,-20,22,20);
+
+ctx.fillRect(-39,-17,8,12);
+
+ctx.fillStyle=gray;
+
+ctx.fillRect(-29,-13,22,17);
+
+ctx.fillStyle=light;
+
+ctx.fillRect(-34,-8,13,8);
+
+ctx.fillStyle=dark2;
+
+ctx.fillRect(-20,-39,10,11);
+ctx.fillRect(7,-39,11,11);
+
+ctx.fillStyle=eye;
+
+ctx.fillRect(-26,-11,4,4);
+
+ctx.fillStyle="#14151a";
+
+ctx.fillRect(-39,-8,5,4);
+
+ctx.fillStyle=dark;
+
+ctx.fillRect(-8,18,9,22);
+ctx.fillRect(12,17,9,23);
+
+ctx.fillStyle=dark2;
+
+ctx.fillRect(-12,38,14,5);
+ctx.fillRect(10,39,15,5);
+
+ctx.fillStyle=gray;
+
+ctx.fillRect(18,-18,24,8);
+ctx.fillRect(32,-25,12,9);
+ctx.fillRect(40,-28,9,8);
+
+ctx.fillStyle=dark2;
+
+ctx.fillRect(-29,-2,10,9);
+
+if(player.frame%2===0){
+
+ctx.fillRect(-18,37,8,15);
+ctx.fillRect(12,38,8,14);
+
+}else{
+
+ctx.fillRect(-13,38,8,14);
+ctx.fillRect(7,36,8,16);
+}
+
+ctx.fillStyle=dark;
+
+ctx.fillRect(-22,49,13,4);
+ctx.fillRect(7,49,14,4);
+
+ctx.restore();
+}
+
+function drawWolfSlide(x,y){
+
+ctx.save();
+
+ctx.translate(x,y+15);
+
+ctx.fillStyle="#292d38";
+
+ctx.fillRect(-35,-15,65,28);
+
+ctx.fillStyle="#555b68";
+
+ctx.fillRect(-35,-10,25,16);
+
+ctx.fillStyle="#858b94";
+
+ctx.fillRect(-39,-5,15,8);
+
+ctx.fillStyle="#1b1e27";
+
+ctx.fillRect(18,-19,13,10);
+
+ctx.fillRect(28,-22,13,9);
+
+ctx.fillStyle="#f7d75d";
+
+ctx.fillRect(-29,-5,4,4);
+
+ctx.fillStyle="#292d38";
+
+ctx.fillRect(-20,12,-1,1);
+
+ctx.fillRect(-15,10,10,6);
+
+ctx.fillRect(5,10,10,6);
+
+ctx.restore();
+}
+
+function drawShield(x,y){
+
+ctx.save();
+
+ctx.translate(x,y);
+
+ctx.strokeStyle="#62dfff";
+ctx.lineWidth=3;
+
+ctx.globalAlpha=.55+.2*Math.sin(time*.01);
+
+ctx.beginPath();
+
+ctx.arc(0,0,40,0,Math.PI*2);
+
+ctx.stroke();
+
+ctx.globalAlpha=.2;
+
+ctx.fillStyle="#55dfff";
+
+ctx.beginPath();
+
+ctx.arc(0,0,37,0,Math.PI*2);
+
+ctx.fill();
+
+ctx.restore();
+}
+
+function drawParticles(){
+
+for(let p of particles){
+
+ctx.globalAlpha=Math.max(0,p.life/900);
+
+ctx.fillStyle=p.color;
+
+ctx.fillRect(
+Math.floor(p.x),
+Math.floor(p.y),
+Math.ceil(p.size),
+Math.ceil(p.size)
+);
+}
+
+ctx.globalAlpha=1;
+}
+
+document.addEventListener("keydown",e=>{
+
+if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a"){
+moveLeft();
+}
+
+if(e.key==="ArrowRight"||e.key.toLowerCase()==="d"){
+moveRight();
+}
+
+if(
+e.key===" "||
+e.key==="ArrowUp"||
+e.key.toLowerCase()==="w"
+){
+jump();
+e.preventDefault();
+}
+
+if(
+e.key==="ArrowDown"||
+e.key.toLowerCase()==="s"
+){
+slide();
+}
+
+if(e.key.toLowerCase()==="p"){
+
+if(gameState==="playing"){
+pauseGame();
+}else if(gameState==="paused"){
+resumeGame();
+}
+}
+
+});
+
+startButton.addEventListener("click",startGame);
+
+resumeButton.addEventListener("click",resumeGame);
+
+restartButton.addEventListener("click",startGame);
+
+againButton.addEventListener("click",startGame);
+
+leftButton.addEventListener("pointerdown",moveLeft);
+
+rightButton.addEventListener("pointerdown",moveRight);
+
+jumpButton.addEventListener("pointerdown",jump);
+
+slideButton.addEventListener("pointerdown",slide);
+
+let touchX=0;
+let touchY=0;
+
+canvas.addEventListener("touchstart",e=>{
+
+let t=e.touches[0];
+
+touchX=t.clientX;
+touchY=t.clientY;
+
+},{passive:true});
+
+canvas.addEventListener("touchend",e=>{
+
+if(gameState!=="playing")return;
+
+let t=e.changedTouches[0];
+
+let dx=t.clientX-touchX;
+let dy=t.clientY-touchY;
+
+if(Math.abs(dx)>Math.abs(dy)){
+
+if(dx>30){
+moveRight();
+}
+
+if(dx<-30){
+moveLeft();
+}
+
+}else{
+
+if(dy<-30){
+jump();
+}
+
+if(dy>30){
+slide();
+}
+}
+
+},{passive:true});
+
+document.addEventListener("visibilitychange",()=>{
+
+if(document.hidden&&gameState==="playing"){
+pauseGame();
+}
+
+});
+
+render();
+
+function initialRender(){
+drawSky();
+drawClouds();
+drawOcean();
+drawIsland();
+drawBeach();
+drawDecorations();
+drawRoad();
+drawRoadLines();
+drawGoats();
+drawEnemies();
+drawPlayer();
+drawParticles();
+}
+
+initialRender();
+</script>
+</body>
+</html>
